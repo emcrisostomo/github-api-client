@@ -28,7 +28,15 @@ PROGNAME=${0:t}
 PROGDIR=${0:h}
 BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
+typeset -A gh_config
+gh_username=
+typeset -r GH_AUTH_FILE_PATH=~/.gh_api
+typeset -r gh_api_base_url=https://api.github.com
+typeset -a curl_headers
+typeset -a curl_options
 typeset -a help_flag
+typeset -a org_flag
+typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
 VERBOSE_PRINT=:
@@ -92,9 +100,97 @@ parse_opts()
   ARGS_PROCESSED=$((OPTIND - 1))
 }
 
+function gh_init_config()
+{
+  [[ -r ${GH_AUTH_FILE_PATH} ]] || return;
+
+  local gh_credentials_file=$(cat ${GH_AUTH_FILE_PATH} | grep -v "^[[:space:]]*#")
+
+  for l in ${(f)gh_credentials_file}
+  do
+    if [[ ${l} =~ "^([[:alnum:]]+)=(.*)" ]]
+    then
+      gh_config+=(${match[1]} ${match[2]})
+    else
+      >&2 print "Invalid configuration: ${l}"
+    fi
+  done
+}
+
+function gh_config_has_property()
+{
+  (( $# == 1 )) ||
+    {
+      >&2 print "Invalid number of arguments: $#"
+      exit 1
+    }
+
+  local property_name=$1
+
+  gh_init_config
+
+  if [[ -n ${gh_config[(i)${property_name}]} ]]
+  then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function gh_configure_credentials()
+{
+  local -i has_token
+  local -i has_username
+  local -i has_password
+
+  gh_config_has_property "token"    && has_token=1
+  gh_config_has_property "username" && has_username=1
+  gh_config_has_property "password" && has_password=1
+
+  (( ${has_username} )) && {
+    gh_username=${gh_config[username]}
+  }
+
+  (( ${has_token} )) && (( ${has_password} )) &&
+    {
+      >&2 print "Token and password cannot be configured at the same time."
+      return 1
+    }
+
+  (( ${has_token} )) &&
+    {
+      curl_headers+=( -H "Authorization: token ${gh_config[token]}")
+    }
+
+  (( ${has_username} && ${has_password} )) &&
+    {
+      curl_options+=( -u ${gh_config[username]}:${gh_config[password]} )
+    }
+
+  return 0
+}
+
+function do_list-repos()
+{
+  curl -s ${curl_headers} ${gh_api_base_url}/users/${gh_username}/repos | jq -r '.[] | .name'
+}
+
+function do_list-org-repos()
+{
+  (( ${+gh_organization} )) ||
+    {
+      >&2 print "Missing parameter: organization"
+      return 1
+    }
+
+  curl -s ${curl_headers} ${gh_api_base_url}/orgs/${gh_organization}/repos | jq -r '.[] | .name'
+}
+
 # main
 zparseopts -D \
            h=help_flag    -help=help_flag         \
+           o:=org_flag    -organization:=org_flag \
+           u:=user_flag   -user:=user_flag        \
            v=verbose_flag -verbose=verbose_flag   \
                           -version=version_flag
 
@@ -110,15 +206,24 @@ then
   exit 0
 fi
 
+gh_configure_credentials
+
+(( ${#org_flag} ))            && gh_organization=${org_flag[2]}
+(( ${#user_flag} ))           && gh_username=${user_flag[2]}
 (( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
 
 parse_opts $* && shift ${ARGS_PROCESSED}
 
-(( $# == 0 )) ||
+(( $# > 0 )) ||
   {
-    >&2 print "No arguments allowed."
+    >&2 print "Missing argument."
     exit 2
   }
+
+gh_command=$1
+shift
+
+do_${gh_command} $*
 
 # Local variables:
 # coding: utf-8
