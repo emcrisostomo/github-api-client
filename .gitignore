@@ -32,6 +32,7 @@ nbproject/
 autoscan.log
 configure.scan
 .deps
+INSTALL
 Makefile
 Makefile.in
 aclocal.m4
@@ -113,9 +114,7 @@ version.texi
 
 # Template files
 Doxyfile
-scripts/macports-checksums
-scripts/port-gen
-scripts/port-gen.in
+scripts/github-api-client
 
 # Output files
 
