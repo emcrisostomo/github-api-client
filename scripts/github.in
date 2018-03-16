@@ -28,18 +28,22 @@ PROGNAME=${0:t}
 PROGDIR=${0:h}
 BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
+
 typeset -A gh_config
 gh_username=
 typeset -r GH_AUTH_FILE_PATH=~/.gh_api
 typeset -r gh_api_base_url=https://api.github.com
-typeset -a curl_headers
-typeset -a curl_options
+
 typeset -a help_flag
 typeset -a org_flag
 typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
 
+typeset -a curl_headers
+curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
+curl_headers+=( -H "User-Agent: github-api-client" )
+typeset -a curl_options
 typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
 curl_options=( -s -L --xattr -w %{http_code} -o ${curl_last_response_file} )
@@ -55,7 +59,7 @@ function gac_check_required_programs()
   do
     command -v ${p} > /dev/null 2>&1 ||
       {
-        >&2 print -- Cannot find required program: ${p}
+        >&2 print "Cannot find required program: ${p}"
         exit 1
       }
   done
@@ -98,7 +102,7 @@ function parse_opts()
   do
     case $opt in
       \?)
-        >&2 print -- Invalid option -${OPTARG}.
+        >&2 print "Invalid option -${OPTARG}."
         exit 1
         ;;
     esac
