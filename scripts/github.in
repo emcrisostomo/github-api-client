@@ -211,6 +211,18 @@ function curl_request()
   esac
 }
 
+function do_list-commits()
+{
+  (( ${+gh_repo} )) ||
+    {
+      >&2 print "Missing parameter: repository"
+      return 1
+    }
+
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
+  curl_print_response | jq -r '.[] | { sha: .sha, author: .commit.author, message: .commit.message }'
+}
+
 function do_list-repos()
 {
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
