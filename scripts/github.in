@@ -39,10 +39,13 @@ typeset -a org_flag
 typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
+
+typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
-curl_options=( -s -L )
+curl_options=( -s -L --xattr -w %{http_code} -o ${curl_last_response_file} )
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
+
 VERBOSE_PRINT=:
 REQUIRED_PROGS=( curl jq )
 
@@ -89,7 +92,7 @@ print_usage()
   print -- "${PROGNAME} home page: <https://github.com/emcrisostomo/github-api-client>."
 }
 
-parse_opts()
+function parse_opts()
 {
   while getopts ":" opt
   do
@@ -174,14 +177,45 @@ function gh_configure_credentials()
   return 0
 }
 
+function curl_print_response()
+{
+  cat ${curl_last_response_file}
+}
+
+function curl_request()
+{
+  (( $# == 1 )) || {
+    >&2 print "Invalid number of arguments: $#"
+    return 1
+  }
+
+  : > ${curl_last_response_file}
+  local request_path=$1
+  local curl_status=$(${curl_cmd} ${curl_headers} ${request_path})
+
+  case ${curl_status} in
+    20*) return ;;
+    4*) ;&
+    5*) >&2 print "Error: ${curl_status} received."
+        >&2 printf "Response: "
+        curl_print_response
+        return 1
+        ;;
+    *) >&2 print "Unexpected status received: ${curl_status}."
+       return 1
+  esac
+}
+
 function do_list-repos()
 {
-  ${curl_cmd} ${curl_headers} ${gh_api_base_url}/users/${gh_username}/repos | jq -r '.[] | .name'
+  curl_request ${gh_api_base_url}/users/${gh_username}/repos
+  curl_print_response | jq -r '.[] | .name'
 }
 
 function do_list-my-repos()
 {
-  ${curl_cmd} ${curl_headers} ${gh_api_base_url}/user/repos | jq -r '.[] | .name'
+  curl_request ${gh_api_base_url}/user/repos
+  curl_print_response | jq -r '.[] | .name'
 }
 
 function do_list-org-repos()
@@ -192,7 +226,8 @@ function do_list-org-repos()
       return 1
     }
 
-  ${curl_cmd} ${curl_headers} ${gh_api_base_url}/orgs/${gh_organization}/repos | jq -r '.[] | .name'
+  curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
+  curl_print_response | jq -r '.[] | .name'
 }
 
 # main
