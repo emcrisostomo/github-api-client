@@ -1,7 +1,13 @@
 NEWS
 ****
 
+New in 0.2.0:
+
+  * Add list-contributors.
+  * Add list-repos.
+  * Add list-my-repos.
+  * Add list-org-repos.
+
 New in 0.1.0:
 
   * Initial release.
-
