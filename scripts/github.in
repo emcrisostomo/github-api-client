@@ -45,9 +45,10 @@ typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
 typeset -a curl_options
+typeset -r curl_last_header_file=$(mktemp)
 typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
-curl_options=( -s -L --xattr -w %{http_code} -o ${curl_last_response_file} )
+curl_options=( -s -L --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
 
@@ -194,6 +195,7 @@ function curl_request()
     return 1
   }
 
+  : > ${curl_last_header_file}
   : > ${curl_last_response_file}
   local request_path=$1
   local curl_status=$(${curl_cmd} ${curl_headers} ${request_path})
