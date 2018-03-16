@@ -114,7 +114,7 @@ version.texi
 
 # Template files
 Doxyfile
-scripts/github-api-client
+scripts/github
 
 # Output files
 
