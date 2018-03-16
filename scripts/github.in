@@ -36,6 +36,7 @@ typeset -r gh_api_base_url=https://api.github.com
 
 typeset -a help_flag
 typeset -a org_flag
+typeset -a repo_flag
 typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
@@ -222,6 +223,18 @@ function do_list-my-repos()
   curl_print_response | jq -r '.[] | .name'
 }
 
+function do_list-contributors()
+{
+  (( ${+gh_repo} )) ||
+    {
+      >&2 print "Missing parameter: repository"
+      return 1
+    }
+
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
+  curl_print_response | jq -r '.[] | .login'
+}
+
 function do_list-org-repos()
 {
   (( ${+gh_organization} )) ||
@@ -238,6 +251,7 @@ function do_list-org-repos()
 zparseopts -D \
            h=help_flag    -help=help_flag         \
            o:=org_flag    -organization:=org_flag \
+           r:=repo_flag   -repository:=repo_flag  \
            u:=user_flag   -user:=user_flag        \
            v=verbose_flag -verbose=verbose_flag   \
                           -version=version_flag
@@ -257,6 +271,7 @@ fi
 gh_configure_credentials
 
 (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
+(( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
 (( ${#user_flag} ))           && gh_username=${user_flag[2]}
 (( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
 
