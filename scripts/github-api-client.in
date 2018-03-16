@@ -175,6 +175,11 @@ function do_list-repos()
   curl -s ${curl_headers} ${gh_api_base_url}/users/${gh_username}/repos | jq -r '.[] | .name'
 }
 
+function do_list-my-repos()
+{
+  curl -s ${curl_headers} ${gh_api_base_url}/user/repos | jq -r '.[] | .name'
+}
+
 function do_list-org-repos()
 {
   (( ${+gh_organization} )) ||
