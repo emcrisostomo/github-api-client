@@ -46,12 +46,18 @@ typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
 typeset -a curl_options
+typeset -r curl_full_header_file=$(mktemp)
+typeset -r curl_full_response_file=$(mktemp)
 typeset -r curl_last_header_file=$(mktemp)
 typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
 curl_options=( -s -L --netrc-optional --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
+
+# pagination
+typeset -i gh_max_pages=3
+gh_link_next=
 
 # Output verbosity and logging
 exec 4>/dev/null
@@ -67,6 +73,8 @@ function __trap()
   trap - EXIT
   exec 4>-
   exec 5>-
+  rm -f ${curl_full_header_file}
+  rm -f ${curl_full_response_file}
   rm -f ${curl_last_header_file}
   rm -f ${curl_last_response_file}
 
@@ -220,7 +228,24 @@ function gh_configure_credentials()
 
 function curl_print_response()
 {
-  cat ${curl_last_response_file}
+  cat ${curl_full_response_file}
+}
+
+function get_link_next()
+{
+  gh_link_next=$(
+    cat ${curl_last_header_file} | \
+      grep "^Link" | \
+      sed -e 's/^Link: *//' |
+      awk '
+        BEGIN { RS=","; FS="; "; OFS=": " }
+        {
+          sub(/^rel="/, "", $2); sub(/"$/, "", $2)
+          sub(/^ *</, "", $1); sub(/>$/, "", $1)
+          print $2, $1
+        }' | \
+          grep "^next:" | \
+          sed -e 's/^next: *//' || true)
 }
 
 function curl_request()
@@ -230,22 +255,37 @@ function curl_request()
     return 1
   }
 
+  : > ${curl_full_header_file}
+  : > ${curl_full_response_file}
   : > ${curl_last_header_file}
   : > ${curl_last_response_file}
   local request_path=$1
-  local curl_status=$(${curl_cmd} ${curl_headers} ${request_path})
 
-  case ${curl_status} in
-    20*) return ;;
-    4*) ;&
-    5*) >&2 print "Error: ${curl_status} received."
-        >&2 printf "Response: "
-        curl_print_response
-        return 1
-        ;;
-    *) >&2 print "Unexpected status received: ${curl_status}"
-       return 1
-  esac
+  gh_link_next=${1}
+
+  local -i current_page=0
+  while [[ -n ${gh_link_next} ]] && (( ${current_page} < ${gh_max_pages} ))
+  do
+    local curl_status=$(${curl_cmd} ${curl_headers} ${request_path})
+
+    case ${curl_status} in
+      20*) ;;
+      4*) ;&
+      5*) >&2 print "Error: ${curl_status} received."
+          >&2 printf "Response: "
+          curl_print_response
+          return 1
+          ;;
+      *) >&2 print "Unexpected status received: ${curl_status}"
+         return 1
+    esac
+
+    cat ${curl_last_header_file} >> ${curl_full_header_file}
+    cat ${curl_last_response_file} >> ${curl_full_response_file}
+
+    get_link_next
+    current_page=$((current_page + 1))
+  done
 }
 
 function do_list-commits()
