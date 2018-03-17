@@ -10,6 +10,7 @@ New in 0.2.0:
   * Add list-public-repos.
   * Add list-tags.
   * Add rate-limit.
+  * Add --max-pages.
   * Add pagination support.
 
 New in 0.1.0:

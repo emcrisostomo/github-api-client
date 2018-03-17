@@ -35,6 +35,7 @@ typeset -r gh_api_base_url=https://api.github.com
 
 # getopts
 typeset -a help_flag
+typeset -a max_pages_flag
 typeset -a org_flag
 typeset -a repo_flag
 typeset -a user_flag
@@ -371,12 +372,13 @@ graphql remaining: \(.resources.graphql.remaining)"'
 function __main()
 {
   zparseopts -D -E \
-             h=help_flag    -help=help_flag         \
-             o:=org_flag    -organization:=org_flag \
-             r:=repo_flag   -repository:=repo_flag  \
-             u:=user_flag   -username:=user_flag    \
-             v=verbose_flag -verbose=verbose_flag   \
-             -version=version_flag
+             h=help_flag    -help=help_flag            \
+                            -max-pages:=max_pages_flag \
+             o:=org_flag    -organization:=org_flag    \
+             r:=repo_flag   -repository:=repo_flag     \
+             u:=user_flag   -username:=user_flag       \
+             v=verbose_flag -verbose=verbose_flag      \
+                            -version=version_flag
 
   (( ${+help_flag[1]} == 0 ))    || print_usage
   (( ${+version_flag[1]} == 0 )) || print_version
@@ -384,6 +386,7 @@ function __main()
   # Temporary disable until deciding what to do with --netrc
   # gh_configure_credentials
 
+  (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#user_flag} ))           && gh_username=${user_flag[2]}
