@@ -33,6 +33,7 @@ typeset -A gh_config
 typeset -r gh_auth_file_path=~/.gh_api
 typeset -r gh_api_base_url=https://api.github.com
 
+# getopts
 typeset -a help_flag
 typeset -a org_flag
 typeset -a repo_flag
@@ -106,6 +107,8 @@ print_version()
   print -- "There is NO WARRANTY, to the extent permitted by law."
   print
   print -- "Written by Enrico M. Crisostomo"
+
+  exit 0
 }
 
 print_usage()
@@ -126,6 +129,8 @@ print_usage()
   print
   print -- "Report bugs to <https://github.com/emcrisostomo/github-api-client/issues>."
   print -- "${PROGNAME} home page: <https://github.com/emcrisostomo/github-api-client>."
+
+  exit 0
 }
 
 function parse_opts()
@@ -243,31 +248,17 @@ function curl_request()
   esac
 }
 
-function check_username()
-{
-  (( ${+gh_username} )) ||
-    {
-      >&2 print "Missing parameter: username"
-      return 1
-    }
-}
-
 function do_list-commits()
 {
-  (( ${+gh_repo} )) ||
-    {
-      >&2 print "Missing parameter: repository"
-      return 1
-    }
-
-  check_username
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
   curl_print_response | jq -r '.[] | { sha: .sha, author: .commit.author, message: .commit.message }'
 }
 
 function do_list-repos()
 {
-  check_username
+  check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
   curl_print_response | jq -r '.[] | .name'
 }
@@ -280,25 +271,34 @@ function do_list-my-repos()
 
 function do_list-contributors()
 {
-  (( ${+gh_repo} )) ||
-    {
-      >&2 print "Missing parameter: repository"
-      return 1
-    }
-
-  check_username
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
   curl_print_response | jq -r '.[] | .login'
 }
 
+function do_list-repos()
+{
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/users/${gh_username}/repos
+  curl_print_response | jq -r '.[] | .name'
+}
+
+function check_parameter_or_fail()
+{
+  local param_name=${1:?Parameter name is required.}
+  local display_name=${2:-${param_name}}
+
+  (( ${(P)+${param_name}} )) ||
+     {
+       >&2 print "Missing parameter: "${display_name}
+       return 1
+     }
+}
+
 function do_list-org-repos()
 {
-  (( ${+gh_organization} )) ||
-    {
-      >&2 print "Missing parameter: organization"
-      return 1
-    }
-
+  check_parameter_or_fail gh_organization organization
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
   curl_print_response | jq -r '.[] | .name'
 }
@@ -322,17 +322,8 @@ function __main()
              v=verbose_flag -verbose=verbose_flag   \
              -version=version_flag
 
-  if (( ${+help_flag[1]} > 0 ))
-  then
-    print_usage
-    exit 0
-  fi
-
-  if (( ${+version_flag[1]} > 0 ))
-  then
-    print_version
-    exit 0
-  fi
+  (( ${+help_flag[1]} == 0 ))    || print_usage
+  (( ${+version_flag[1]} == 0 )) || print_version
 
   # Temporary disable until deciding what to do with --netrc
   # gh_configure_credentials
