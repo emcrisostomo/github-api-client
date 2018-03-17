@@ -30,7 +30,7 @@ BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 
 typeset -A gh_config
-typeset -r GH_AUTH_FILE_PATH=~/.gh_api
+typeset -r gh_auth_file_path=~/.gh_api
 typeset -r gh_api_base_url=https://api.github.com
 
 typeset -a help_flag
@@ -40,6 +40,7 @@ typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
 
+# Curl configuration
 typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
@@ -51,7 +52,37 @@ curl_options=( -s -L --netrc-optional --xattr -w %{http_code} -o ${curl_last_res
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
 
+# Output verbosity and logging
+exec 4>/dev/null
+exec 5>/dev/null
+
+typeset -A log_levels=(info 4 debug 5)
+
+trap '__trap' INT TERM EXIT
+
+function __trap()
+{
+  local exit_code=$?
+  trap - EXIT
+  exec 4>-
+  exec 5>-
+  exit ${exit_code}
+}
+
+
+function gh_log()
+{
+  local log_level=${1:?Log level is required.}
+  local log_message=${2:?Log message is required.}
+  : ${log_levels[(i)${log_level}]:?Log level not found.}
+  local log_fd=${log_levels[${log_level}]}
+
+  printf -- "%s: %s\n" ${log_level} ${log_message} 1>&${log_fd}
+}
+
 VERBOSE_PRINT=:
+
+# Program dependencies
 REQUIRED_PROGS=( curl jq )
 
 function gac_check_required_programs()
@@ -114,9 +145,9 @@ function parse_opts()
 
 function gh_init_config()
 {
-  [[ -r ${GH_AUTH_FILE_PATH} ]] || return;
+  [[ -r ${gh_auth_file_path} ]] || return;
 
-  local gh_credentials_file=$(cat ${GH_AUTH_FILE_PATH} | grep -v "^[[:space:]]*#")
+  local gh_credentials_file=$(cat ${gh_auth_file_path} | grep -v "^[[:space:]]*#")
 
   for l in ${(f)gh_credentials_file}
   do
@@ -207,7 +238,7 @@ function curl_request()
         curl_print_response
         return 1
         ;;
-    *) >&2 print "Unexpected status received: ${curl_status}."
+    *) >&2 print "Unexpected status received: ${curl_status}"
        return 1
   esac
 }
@@ -281,47 +312,52 @@ function do_rate-limit()
       '"core remaining: \(.resources.core.remaining)\nsearch remaining: \(.resources.search.remaining)\ngraphql remaining: \(.resources.graphql.remaining)"'
 }
 
+function __main()
+{
+  zparseopts -D \
+             h=help_flag    -help=help_flag         \
+             o:=org_flag    -organization:=org_flag \
+             r:=repo_flag   -repository:=repo_flag  \
+             u:=user_flag   -user:=user_flag        \
+             v=verbose_flag -verbose=verbose_flag   \
+             -version=version_flag
+
+  if (( ${+help_flag[1]} > 0 ))
+  then
+    print_usage
+    exit 0
+  fi
+
+  if (( ${+version_flag[1]} > 0 ))
+  then
+    print_version
+    exit 0
+  fi
+
+  # Temporary disable until deciding what to do with --netrc
+  # gh_configure_credentials
+
+  (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
+  (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
+  (( ${#user_flag} ))           && gh_username=${user_flag[2]}
+  (( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
+
+  parse_opts $* && shift ${ARGS_PROCESSED}
+
+  (( $# > 0 )) ||
+    {
+      >&2 print "Missing argument."
+      exit 2
+    }
+
+  gh_command=$1
+  shift
+
+  do_${gh_command} $*
+}
+
 # main
-zparseopts -D \
-           h=help_flag    -help=help_flag         \
-           o:=org_flag    -organization:=org_flag \
-           r:=repo_flag   -repository:=repo_flag  \
-           u:=user_flag   -user:=user_flag        \
-           v=verbose_flag -verbose=verbose_flag   \
-                          -version=version_flag
-
-if (( ${+help_flag[1]} > 0 ))
-then
-  print_usage
-  exit 0
-fi
-
-if (( ${+version_flag[1]} > 0 ))
-then
-  print_version
-  exit 0
-fi
-
-# Temporary disable until deciding what to do with --netrc
-# gh_configure_credentials
-
-(( ${#org_flag} ))            && gh_organization=${org_flag[2]}
-(( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
-(( ${#user_flag} ))           && gh_username=${user_flag[2]}
-(( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
-
-parse_opts $* && shift ${ARGS_PROCESSED}
-
-(( $# > 0 )) ||
-  {
-    >&2 print "Missing argument."
-    exit 2
-  }
-
-gh_command=$1
-shift
-
-do_${gh_command} $*
+__main $*
 
 # Local variables:
 # coding: utf-8
