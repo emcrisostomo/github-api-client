@@ -100,35 +100,35 @@ function gac_check_required_programs()
 
 print_version()
 {
-  print -- "${PROGNAME} ${PACKAGE_VERSION}"
-  print -- "Copyright (C) 2018 Enrico M. Crisostomo"
-  print -- "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>."
-  print -- "This is free software: you are free to change and redistribute it."
-  print -- "There is NO WARRANTY, to the extent permitted by law."
+  print "${PROGNAME} ${PACKAGE_VERSION}"
+  print "Copyright (C) 2018 Enrico M. Crisostomo"
+  print "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>."
+  print "This is free software: you are free to change and redistribute it."
+  print "There is NO WARRANTY, to the extent permitted by law."
   print
-  print -- "Written by Enrico M. Crisostomo"
+  print "Written by Enrico M. Crisostomo"
 
   exit 0
 }
 
 print_usage()
 {
-  print -- "${PROGNAME} ${PACKAGE_VERSION}"
+  print "${PROGNAME} ${PACKAGE_VERSION}"
   print
-  print -- "Usage:"
-  print -- "${PROGNAME} (options)* (path)*"
-  print -- "${PROGNAME} -h"
-  print -- "${PROGNAME} -v"
+  print "Usage:"
+  print "${PROGNAME} (options)* (path)*"
+  print "${PROGNAME} -h"
+  print "${PROGNAME} -v"
   print
-  print -- "Options:"
-  print -- " -h, --help     Print this message."
-  print -- " -v, --verbose  Print verbose output."
-  print -- "     --version  Print the program version."
+  print "Options:"
+  print " -h, --help     Print this message."
+  print " -v, --verbose  Print verbose output."
+  print "     --version  Print the program version."
   print
-  print -- "See the man page for more information."
+  print "See the man page for more information."
   print
-  print -- "Report bugs to <https://github.com/emcrisostomo/github-api-client/issues>."
-  print -- "${PROGNAME} home page: <https://github.com/emcrisostomo/github-api-client>."
+  print "Report bugs to <https://github.com/emcrisostomo/github-api-client/issues>."
+  print "${PROGNAME} home page: <https://github.com/emcrisostomo/github-api-client>."
 
   exit 0
 }
