@@ -272,6 +272,15 @@ function do_list-org-repos()
   curl_print_response | jq -r '.[] | .name'
 }
 
+function do_rate-limit()
+{
+  curl_request ${gh_api_base_url}/rate_limit
+  curl_print_response | \
+    jq \
+      -r \
+      '"core remaining: \(.resources.core.remaining)\nsearch remaining: \(.resources.search.remaining)\ngraphql remaining: \(.resources.graphql.remaining)"'
+}
+
 # main
 zparseopts -D \
            h=help_flag    -help=help_flag         \
