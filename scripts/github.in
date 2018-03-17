@@ -70,7 +70,6 @@ function __trap()
   exit ${exit_code}
 }
 
-
 function gh_log()
 {
   local log_level=${1:?Log level is required.}
@@ -81,10 +80,8 @@ function gh_log()
   printf -- "%s: %s\n" ${log_level} ${log_message} 1>&${log_fd}
 }
 
-VERBOSE_PRINT=:
-
 # Program dependencies
-REQUIRED_PROGS=( curl jq )
+typeset -a REQUIRED_PROGS=( curl jq )
 
 function gac_check_required_programs()
 {
@@ -309,7 +306,9 @@ function do_rate-limit()
   curl_print_response | \
     jq \
       -r \
-      '"core remaining: \(.resources.core.remaining)\nsearch remaining: \(.resources.search.remaining)\ngraphql remaining: \(.resources.graphql.remaining)"'
+'"core remaining: \(.resources.core.remaining)
+search remaining: \(.resources.search.remaining)
+graphql remaining: \(.resources.graphql.remaining)"'
 }
 
 function __main()
