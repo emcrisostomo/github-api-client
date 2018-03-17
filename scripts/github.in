@@ -30,7 +30,6 @@ BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 
 typeset -A gh_config
-gh_username=
 typeset -r GH_AUTH_FILE_PATH=~/.gh_api
 typeset -r gh_api_base_url=https://api.github.com
 
@@ -48,7 +47,7 @@ typeset -a curl_options
 typeset -r curl_last_header_file=$(mktemp)
 typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
-curl_options=( -s -L --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
+curl_options=( -s -L --netrc-optional --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
 
@@ -213,6 +212,15 @@ function curl_request()
   esac
 }
 
+function check_username()
+{
+  (( ${+gh_username} )) ||
+    {
+      >&2 print "Missing parameter: username"
+      return 1
+    }
+}
+
 function do_list-commits()
 {
   (( ${+gh_repo} )) ||
@@ -221,12 +229,14 @@ function do_list-commits()
       return 1
     }
 
+  check_username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
   curl_print_response | jq -r '.[] | { sha: .sha, author: .commit.author, message: .commit.message }'
 }
 
 function do_list-repos()
 {
+  check_username
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
   curl_print_response | jq -r '.[] | .name'
 }
@@ -245,6 +255,7 @@ function do_list-contributors()
       return 1
     }
 
+  check_username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
   curl_print_response | jq -r '.[] | .login'
 }
@@ -282,7 +293,8 @@ then
   exit 0
 fi
 
-gh_configure_credentials
+# Temporary disable until deciding what to do with --netrc
+# gh_configure_credentials
 
 (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
 (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
