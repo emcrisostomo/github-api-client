@@ -274,6 +274,14 @@ function do_list-contributors()
   curl_print_response | jq -r '.[] | .login'
 }
 
+function do_list-tags()
+{
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
+  curl_print_response | jq -r '.[] | .name'
+}
+
 function do_list-repos()
 {
   check_parameter_or_fail gh_username username
@@ -313,11 +321,11 @@ graphql remaining: \(.resources.graphql.remaining)"'
 
 function __main()
 {
-  zparseopts -D \
+  zparseopts -D -E \
              h=help_flag    -help=help_flag         \
              o:=org_flag    -organization:=org_flag \
              r:=repo_flag   -repository:=repo_flag  \
-             u:=user_flag   -user:=user_flag        \
+             u:=user_flag   -username:=user_flag    \
              v=verbose_flag -verbose=verbose_flag   \
              -version=version_flag
 
