@@ -67,6 +67,9 @@ function __trap()
   trap - EXIT
   exec 4>-
   exec 5>-
+  rm -f ${curl_last_header_file}
+  rm -f ${curl_last_response_file}
+
   exit ${exit_code}
 }
 
@@ -280,6 +283,12 @@ function do_list-tags()
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
   curl_print_response | jq -r '.[] | .name'
+}
+
+function do_list-public-repos()
+{
+  curl_request ${gh_api_base_url}/repositories
+  curl_print_response | jq -r '.[] | .full_name'
 }
 
 function do_list-repos()
