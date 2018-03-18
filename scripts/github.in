@@ -260,14 +260,13 @@ function curl_request()
   : > ${curl_full_response_file}
   : > ${curl_last_header_file}
   : > ${curl_last_response_file}
-  local request_path=$1
 
   gh_link_next=${1}
 
   local -i current_page=0
   while [[ -n ${gh_link_next} ]] && (( ${current_page} < ${gh_max_pages} ))
   do
-    local curl_status=$(${curl_cmd} ${curl_headers} ${request_path})
+    local curl_status=$(${curl_cmd} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
