@@ -402,6 +402,12 @@ function __main()
   gh_command=$1
   shift
 
+  if ! whence -w do_${gh_command} | grep "function$" > /dev/null
+  then
+    >&2 print -- "Unknown command:" ${gh_command}
+    return 1
+  fi
+
   do_${gh_command} $*
 }
 
