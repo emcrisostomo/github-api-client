@@ -142,21 +142,6 @@ print_usage()
   exit 0
 }
 
-function parse_opts()
-{
-  while getopts ":" opt
-  do
-    case $opt in
-      \?)
-        >&2 print "Invalid option -${OPTARG}."
-        exit 1
-        ;;
-    esac
-  done
-
-  ARGS_PROCESSED=$((OPTIND - 1))
-}
-
 function gh_init_config()
 {
   [[ -r ${gh_auth_file_path} ]] || return;
@@ -306,13 +291,24 @@ function curl_request()
   done
 }
 
+function allow_no_args()
+{
+  (( $# == 0 )) ||
+    {
+      >&2 print "Invalid arguments:" $*
+      return 1
+    }
+}
+
 function do_create-repo()
 {
+  allow_no_args $*
   curl_request POST ${gh_api_base_url}/user/repos
 }
 
 function do_delete-repo()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request DELETE ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
@@ -320,6 +316,7 @@ function do_delete-repo()
 
 function do_list-commits()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
@@ -328,6 +325,7 @@ function do_list-commits()
 
 function do_list-repos()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
   curl_print_response | jq -r '.[] | .name'
@@ -335,12 +333,14 @@ function do_list-repos()
 
 function do_list-my-repos()
 {
+  allow_no_args $*
   curl_request ${gh_api_base_url}/user/repos
   curl_print_response | jq -r '.[] | .name'
 }
 
 function do_list-contributors()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
@@ -349,6 +349,7 @@ function do_list-contributors()
 
 function do_list-tags()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
@@ -357,12 +358,14 @@ function do_list-tags()
 
 function do_list-public-repos()
 {
+  allow_no_args $*
   curl_request ${gh_api_base_url}/repositories
   curl_print_response | jq -r '.[] | .full_name'
 }
 
 function do_list-repos()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
   curl_print_response | jq -r '.[] | .name'
@@ -382,6 +385,7 @@ function check_parameter_or_fail()
 
 function do_list-org-repos()
 {
+  allow_no_args $*
   check_parameter_or_fail gh_organization organization
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
   curl_print_response | jq -r '.[] | .name'
@@ -389,6 +393,7 @@ function do_list-org-repos()
 
 function do_rate-limit()
 {
+  allow_no_args $*
   curl_request ${gh_api_base_url}/rate_limit
   curl_print_response | \
     jq \
@@ -420,8 +425,6 @@ function __main()
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#user_flag} ))           && gh_username=${user_flag[2]}
   (( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
-
-  parse_opts $* && shift ${ARGS_PROCESSED}
 
   (( $# > 0 )) ||
     {
