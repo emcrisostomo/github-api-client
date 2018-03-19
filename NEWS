@@ -3,6 +3,7 @@ NEWS
 
 New in 0.2.0:
 
+  * Add create-repo
   * Add list-contributors.
   * Add list-repos.
   * Add list-my-repos.

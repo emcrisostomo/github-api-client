@@ -251,7 +251,7 @@ function get_link_next()
 
 function curl_request()
 {
-  (( $# == 1 )) || {
+  (( $# == 1 )) || (( $# == 2 )) || {
     >&2 print "Invalid number of arguments: $#"
     return 1
   }
@@ -261,12 +261,30 @@ function curl_request()
   : > ${curl_last_header_file}
   : > ${curl_last_response_file}
 
-  gh_link_next=${1}
+  local curl_method
+  local -a curl_request_options
+
+  if (( $# == 1 ))
+  then
+    curl_method=GET
+    gh_link_next=${1}
+  else
+    curl_method=${1}
+    gh_link_next=${2}
+    curl_request_options+=( -d @- )
+  fi
+
+  case ${curl_method} in
+    GET) ;;
+    POST) ;;
+    *) >&2 print "Unexpected verb:" ${curl_method}
+       return 1
+  esac
 
   local -i current_page=0
   while [[ -n ${gh_link_next} ]] && (( ${current_page} < ${gh_max_pages} ))
   do
-    local curl_status=$(${curl_cmd} ${curl_headers} ${gh_link_next})
+    local curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
@@ -276,7 +294,7 @@ function curl_request()
           curl_print_response
           return 1
           ;;
-      *) >&2 print "Unexpected status received: ${curl_status}"
+      *) >&2 print "Unexpected status received:" ${curl_status}
          return 1
     esac
 
@@ -286,6 +304,11 @@ function curl_request()
     get_link_next
     current_page=$((current_page + 1))
   done
+}
+
+function do_create-repo()
+{
+  curl_request POST ${gh_api_base_url}/user/repos
 }
 
 function do_list-commits()
@@ -404,7 +427,7 @@ function __main()
 
   if ! whence -w do_${gh_command} | grep "function$" > /dev/null
   then
-    >&2 print -- "Unknown command:" ${gh_command}
+    >&2 print "Unknown command:" ${gh_command}
     return 1
   fi
 
