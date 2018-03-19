@@ -72,8 +72,8 @@ function __trap()
 {
   local exit_code=$?
   trap - EXIT
-  exec 4>-
-  exec 5>-
+  exec 4>&-
+  exec 5>&-
   rm -f ${curl_full_header_file}
   rm -f ${curl_full_response_file}
   rm -f ${curl_last_header_file}
