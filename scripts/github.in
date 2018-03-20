@@ -366,6 +366,15 @@ function do_list-commits()
   curl_print_response | jq -r '.[] | { sha: .sha, author: .commit.author, message: .commit.message }'
 }
 
+function do_list-languages()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/languages
+  curl_print_response | jq -r 'keys[]'
+}
+
 function do_list-repos()
 {
   allow_no_args $*
