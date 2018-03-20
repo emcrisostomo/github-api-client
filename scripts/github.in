@@ -44,8 +44,11 @@ typeset -a verbose_flag
 typeset -a version_flag
 
 typeset -A body_field_type
-body_field_type+=( name    string )
-body_field_type+=( private bool )
+body_field_type+=( has_issues   bool )
+body_field_type+=( has_projects bool )
+body_field_type+=( has_wiki     bool )
+body_field_type+=( name         string )
+body_field_type+=( private      bool )
 
 # Curl configuration
 typeset -a curl_headers
@@ -136,7 +139,8 @@ function print_command_names()
     grep "^function *do_" | \
     awk '{ print $2; }' | \
     sed -e 's/()//' \
-        -e 's/^do_/  /'
+        -e 's/^do_/  /' | \
+    sort
 }
 
 function print_usage()
@@ -409,6 +413,14 @@ function do_delete-repo()
   curl_request DELETE ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
 }
 
+function do_edit-repo()
+{
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  create_json_body $* | \
+    curl_request POST ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
+}
+
 function do_get-repo()
 {
   allow_no_args $*
@@ -443,14 +455,6 @@ function do_list-repo-issues()
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/issues
   curl_print_response | jq -r '.[] | "\(.id): \(.title)"'
-}
-
-function do_list-repos()
-{
-  allow_no_args $*
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/users/${gh_username}/repos
-  curl_print_response | jq -r '.[] | .name'
 }
 
 function do_list-my-repos()

@@ -5,14 +5,16 @@ New in 0.2.0:
 
   * Add create-repo.
   * Add delete-repo.
+  * Add edit-repo.
   * Add get-repo.
+  * Add list-commits.
   * Add list-contributors.
   * Add list-languages.
-  * Add list-repo-issues.
-  * Add list-repos.
   * Add list-my-repos.
   * Add list-org-repos.
   * Add list-public-repos.
+  * Add list-repo-issues.
+  * Add list-repos.
   * Add list-tags.
   * Add rate-limit.
   * Add --max-pages.
