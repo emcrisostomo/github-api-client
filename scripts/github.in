@@ -42,6 +42,10 @@ typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
 
+typeset -A body_field_type
+body_field_type+=( name    string )
+body_field_type+=( private bool )
+
 # Curl configuration
 typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
@@ -300,10 +304,49 @@ function allow_no_args()
     }
 }
 
+function create_json_body()
+{
+  local -i counter
+  local -a key_args
+  local -a value_args
+  local filter_string
+  filter_string='.'
+
+  for p in $*
+  do
+    local key=${p%%=*}
+    local value=${p#*=}
+    local field_type=${body_field_type[${key}]-string}
+
+    key_args+=( --arg k${counter} ${key} )
+
+    case ${field_type} in
+      string)
+        value_args+="--arg"
+        ;;
+      *)
+        value_args+="--argjson"
+        ;;
+    esac
+
+    value_args+=( v${counter} "${${value#\"}%\"}" )
+
+    filter_string+=" | .[\$k${counter}]=\$v${counter}"
+
+    counter=$((counter + 1))
+  done
+
+  print '{}' | \
+    jq \
+      "${(@)key_args}" \
+      "${(@)value_args}" \
+      ${filter_string}
+}
+
 function do_create-repo()
 {
-  allow_no_args $*
-  curl_request POST ${gh_api_base_url}/user/repos
+  create_json_body $* | \
+    curl_request POST ${gh_api_base_url}/user/repos
 }
 
 function do_delete-repo()
