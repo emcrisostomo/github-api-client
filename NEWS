@@ -8,6 +8,7 @@ New in 0.2.0:
   * Add get-repo.
   * Add list-contributors.
   * Add list-languages.
+  * Add list-repo-issues.
   * Add list-repos.
   * Add list-my-repos.
   * Add list-org-repos.
