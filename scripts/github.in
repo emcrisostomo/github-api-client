@@ -357,6 +357,15 @@ function do_delete-repo()
   curl_request DELETE ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
 }
 
+function do_get-repo()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
+  curl_print_response | jq -r '.'
+}
+
 function do_list-commits()
 {
   allow_no_args $*

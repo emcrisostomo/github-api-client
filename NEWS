@@ -5,6 +5,7 @@ New in 0.2.0:
 
   * Add create-repo.
   * Add delete-repo.
+  * Add get-repo.
   * Add list-contributors.
   * Add list-languages.
   * Add list-repos.
