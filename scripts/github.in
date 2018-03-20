@@ -301,6 +301,7 @@ function curl_request()
   : > ${curl_last_response_file}
 
   local curl_method
+  local curl_status
   local -a curl_request_options
 
   if (( $# == 1 ))
@@ -329,7 +330,6 @@ function curl_request()
       gh_debug "Headers: ${h}"
     done
 
-    local curl_status
     curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
