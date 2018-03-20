@@ -96,6 +96,11 @@ function gh_log()
   printf -- "%s: %s\n" ${log_level} ${log_message} 1>&${log_fd}
 }
 
+function gh_debug()
+{
+  gh_log debug $*
+}
+
 # Program dependencies
 typeset -a REQUIRED_PROGS=( curl jq )
 
@@ -216,13 +221,39 @@ function gh_configure_credentials()
   return 0
 }
 
+function term_print()
+{
+  [[ ! -p /dev/stdin ]] || return
+
+  print -- $*
+}
+
+function curl_print_last_error_message()
+{
+  cat ${curl_last_response_file} | >&2 jq -r '.message'
+  print
+}
+
 function curl_print_response()
 {
   cat ${curl_full_response_file}
+
+  # Add a newline characters when printing on a terminal
+  term_print "\n"
 }
 
 function get_link_next()
 {
+  # Link: headers have this format:
+  #
+  #   <URL>, rel=reltype; <URL>, rel=reltype;
+  #
+  # We first split the Link hader on ';' and then each line is split on ','.
+  # URL and reltype are extracted, and Each (URL, reltype) pair is then printed
+  # on a single line as:
+  #
+  #   reltype: URL
+  #
   gh_link_next=$(
     cat ${curl_last_header_file} | \
       grep "^Link" | \
@@ -273,17 +304,23 @@ function curl_request()
   local -i current_page=0
   while [[ -n ${gh_link_next} ]] && (( ${current_page} < ${gh_max_pages} ))
   do
+    gh_debug "Method: ${curl_method}, options: ${curl_request_options}, path ${gh_link_next}"
+    for h in ${curl_headers}
+    do
+      gh_debug "Headers: ${h}"
+    done
+
     local curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
       4*) ;&
       5*) >&2 print "Error: ${curl_status} received."
-          >&2 printf "Response: "
-          curl_print_response
+          curl_print_last_error_message
           return 1
           ;;
       *) >&2 print "Unexpected status received:" ${curl_status}
+         curl_print_last_error_message
          return 1
     esac
 
@@ -494,7 +531,7 @@ function __main()
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#user_flag} ))           && gh_username=${user_flag[2]}
-  (( ${+verbose_flag[1]} > 0 )) && VERBOSE_PRINT=print
+  (( ${+verbose_flag[1]} > 0 )) && exec 5>&2
 
   (( $# > 0 )) ||
     {
