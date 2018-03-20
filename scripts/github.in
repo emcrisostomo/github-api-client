@@ -53,6 +53,7 @@ body_field_type+=( private      bool )
 # Curl configuration
 typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
+curl_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
 typeset -a curl_options
 typeset -r curl_full_header_file=$(mktemp)
@@ -515,6 +516,15 @@ function do_list-org-repos()
   check_parameter_or_fail gh_organization organization
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
   curl_print_response | jq -r '.[] | .name'
+}
+
+function do_list-repo-topics()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/topics
+  curl_print_response | jq -r '.names[]'
 }
 
 function do_rate-limit()
