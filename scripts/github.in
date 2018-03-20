@@ -56,7 +56,7 @@ typeset -r curl_full_response_file=$(mktemp)
 typeset -r curl_last_header_file=$(mktemp)
 typeset -r curl_last_response_file=$(mktemp)
 typeset -a curl_options
-curl_options=( -s -L --netrc-optional --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
+curl_options=( -s -S -L --netrc-optional --xattr -w %{http_code} -o ${curl_last_response_file} -D ${curl_last_header_file} )
 typeset -a curl_cmd
 curl_cmd=( curl ${curl_options} )
 
@@ -310,7 +310,8 @@ function curl_request()
       gh_debug "Headers: ${h}"
     done
 
-    local curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
+    local curl_status
+    curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
