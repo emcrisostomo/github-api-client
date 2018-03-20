@@ -24,6 +24,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+PROG=${0}
 PROGNAME=${0:t}
 PROGDIR=${0:h}
 BUG_REPORT=@PACKAGE_BUGREPORT@
@@ -116,7 +117,7 @@ function gac_check_required_programs()
   done
 }
 
-print_version()
+function print_version()
 {
   print "${PROGNAME} ${PACKAGE_VERSION}"
   print "Copyright (C) 2018 Enrico M. Crisostomo"
@@ -129,12 +130,21 @@ print_version()
   exit 0
 }
 
-print_usage()
+function print_command_names()
+{
+  cat ${PROG} | \
+    grep "^function *do_" | \
+    awk '{ print $2; }' | \
+    sed -e 's/()//' \
+        -e 's/^do_/  /'
+}
+
+function print_usage()
 {
   print "${PROGNAME} ${PACKAGE_VERSION}"
   print
   print "Usage:"
-  print "${PROGNAME} (options)* (path)*"
+  print "${PROGNAME} (options)* command"
   print "${PROGNAME} -h"
   print "${PROGNAME} -v"
   print
@@ -142,6 +152,10 @@ print_usage()
   print " -h, --help     Print this message."
   print " -v, --verbose  Print verbose output."
   print "     --version  Print the program version."
+  print
+  print "Available commands:"
+  print
+  print_command_names
   print
   print "See the man page for more information."
   print
