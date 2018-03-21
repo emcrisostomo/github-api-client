@@ -35,6 +35,7 @@ typeset -r gh_auth_file_path=~/.gh_api
 typeset -r gh_api_base_url=https://api.github.com
 
 # getopts
+typeset -a filter_flag
 typeset -a help_flag
 typeset -a max_pages_flag
 typeset -a org_flag
@@ -460,11 +461,16 @@ function do_list-repo-issues()
   curl_print_response | jq -r '.[] | "\(.id): \(.title)"'
 }
 
+function gh_apply_json_filter()
+{
+  jq -r ${1} < /dev/stdin
+}
+
 function do_list-my-repos()
 {
   allow_no_args $*
   curl_request ${gh_api_base_url}/user/repos
-  curl_print_response | jq -r '.[] | .name'
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-.name}"
 }
 
 function do_list-contributors()
@@ -546,6 +552,7 @@ function __main()
   gh_check_required_programs
 
   zparseopts -D -E \
+             f:=filter_flag -filter:=filter_flag       \
              h=help_flag    -help=help_flag            \
                             -max-pages:=max_pages_flag \
              o:=org_flag    -organization:=org_flag    \
@@ -561,6 +568,7 @@ function __main()
   # gh_configure_credentials
 
   (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
+  (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#user_flag} ))           && gh_username=${user_flag[2]}
