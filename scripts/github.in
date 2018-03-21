@@ -43,6 +43,7 @@ typeset -a user_flag
 typeset -a verbose_flag
 typeset -a version_flag
 
+# json field types
 typeset -A body_field_type
 body_field_type+=( has_issues   bool )
 body_field_type+=( has_projects bool )
@@ -73,8 +74,24 @@ gh_link_next=
 exec 4>/dev/null
 exec 5>/dev/null
 
+function gh_log()
+{
+  local log_level=${1:?Log level is required.}
+  local log_message=${2:?Log message is required.}
+  : ${log_levels[(i)${log_level}]:?Log level not found.}
+  local log_fd=${log_levels[${log_level}]}
+
+  printf -- "%s: %s\n" ${log_level} ${log_message} 1>&${log_fd}
+}
+
+function gh_debug()
+{
+  gh_log debug $*
+}
+
 typeset -A log_levels=(info 4 debug 5)
 
+# cleanup trap
 trap '__trap' INT TERM EXIT
 
 function __trap()
@@ -91,25 +108,10 @@ function __trap()
   exit ${exit_code}
 }
 
-function gh_log()
-{
-  local log_level=${1:?Log level is required.}
-  local log_message=${2:?Log message is required.}
-  : ${log_levels[(i)${log_level}]:?Log level not found.}
-  local log_fd=${log_levels[${log_level}]}
-
-  printf -- "%s: %s\n" ${log_level} ${log_message} 1>&${log_fd}
-}
-
-function gh_debug()
-{
-  gh_log debug $*
-}
-
 # Program dependencies
 typeset -a REQUIRED_PROGS=( curl jq )
 
-function gac_check_required_programs()
+function gh_check_required_programs()
 {
   for p in ${REQUIRED_PROGS}
   do
@@ -541,6 +543,8 @@ graphql remaining: \(.resources.graphql.remaining)"'
 
 function __main()
 {
+  gh_check_required_programs
+
   zparseopts -D -E \
              h=help_flag    -help=help_flag            \
                             -max-pages:=max_pages_flag \
