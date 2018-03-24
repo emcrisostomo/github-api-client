@@ -31,8 +31,10 @@ BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 
 typeset -A gh_config
+typeset -r gh_netrc=~/.netrc
 typeset -r gh_auth_file_path=~/.gh_api
-typeset -r gh_api_base_url=https://api.github.com
+typeset -r gh_api_host=api.github.com
+typeset -r gh_api_base_url=https://${gh_api_host}
 
 # getopts
 typeset -a filter_flag
@@ -173,9 +175,24 @@ function print_usage()
   exit 0
 }
 
+function gh_init_default_username()
+{
+  [[ -r ${gh_netrc} ]] || return
+
+  local -a gh_netrc_section
+  gh_netrc_section=( "${(f)$(awk \
+                       '/^machine[[:blank:]]*'${gh_api_host}'/{flag=1;next}/^machine.*/{flag=0}flag' \
+                       ${gh_netrc} | \
+                  grep "^[[:blank:]]*login[[:blank:]]*" || true)}" )
+
+  (( ${#gh_netrc_section} > 0 )) || return
+
+  gh_username=${gh_netrc_section[-1]# *login *}
+}
+
 function gh_init_config()
 {
-  [[ -r ${gh_auth_file_path} ]] || return;
+  [[ -r ${gh_auth_file_path} ]] || return
 
   local gh_credentials_file=$(cat ${gh_auth_file_path} | grep -v "^[[:space:]]*#")
 
@@ -566,6 +583,7 @@ function __main()
 
   # Temporary disable until deciding what to do with --netrc
   # gh_configure_credentials
+  gh_init_default_username
 
   (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
