@@ -42,7 +42,7 @@ typeset -a help_flag
 typeset -a max_pages_flag
 typeset -a org_flag
 typeset -a repo_flag
-typeset -a user_flag
+typeset -a owner_flag
 typeset -a verbose_flag
 typeset -a version_flag
 
@@ -175,7 +175,7 @@ function print_usage()
   exit 0
 }
 
-function gh_init_default_username()
+function gh_init_default_owner()
 {
   [[ -r ${gh_netrc} ]] || return
 
@@ -187,7 +187,7 @@ function gh_init_default_username()
 
   (( ${#gh_netrc_section} > 0 )) || return
 
-  gh_username=${gh_netrc_section[-1]# *login *}
+  gh_owner=${gh_netrc_section[-1]# *login *}
 }
 
 function gh_init_config()
@@ -230,15 +230,15 @@ function gh_config_has_property()
 function gh_configure_credentials()
 {
   local -i has_token
-  local -i has_username
+  local -i has_owner
   local -i has_password
 
   gh_config_has_property "token"    && has_token=1
-  gh_config_has_property "username" && has_username=1
+  gh_config_has_property "owner" && has_owner=1
   gh_config_has_property "password" && has_password=1
 
-  (( ${has_username} )) && {
-    gh_username=${gh_config[username]}
+  (( ${has_owner} )) && {
+    gh_owner=${gh_config[owner]}
   }
 
   (( ${has_token} )) && (( ${has_password} )) &&
@@ -252,9 +252,9 @@ function gh_configure_credentials()
       curl_headers+=( -H "Authorization: token ${gh_config[token]}")
     }
 
-  (( ${has_username} && ${has_password} )) &&
+  (( ${has_owner} && ${has_password} )) &&
     {
-      curl_options+=( -u ${gh_config[username]}:${gh_config[password]} )
+      curl_options+=( -u ${gh_config[owner]}:${gh_config[password]} )
     }
 
   return 0
@@ -442,24 +442,24 @@ function do_delete-repo()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request DELETE ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
+  check_parameter_or_fail gh_owner owner
+  curl_request DELETE ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}
 }
 
 function do_edit-repo()
 {
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
+  check_parameter_or_fail gh_owner owner
   create_json_body $* | \
-    curl_request POST ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
+    curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}
 }
 
 function do_get-repo()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.}"
 }
 
@@ -467,8 +467,8 @@ function do_list-commits()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/commits
   local default_filter="{ sha: .sha, author: .commit.author, message: .commit.message }"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -477,8 +477,8 @@ function do_list-languages()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/languages
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/languages
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-keys[]}"
 }
 
@@ -486,8 +486,8 @@ function do_list-repo-issues()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/issues
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues
   local default_filter="\"\(.id): \(.title)\""
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -509,8 +509,8 @@ function do_list-contributors()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/contributors
   local default_filter=".login"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -542,8 +542,8 @@ function do_list-repo-issue-events()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/issues/events
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/events
   local default_filter="."
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -552,8 +552,8 @@ function do_list-repo-events()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/events
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/events
   local default_filter="."
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -562,8 +562,8 @@ function do_list-repo-notifications()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/notifications
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/notifications
   local default_filter="\"\(.repository.full_name): \(.subject.title)\""
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -571,8 +571,8 @@ function do_list-repo-notifications()
 function do_list-repos()
 {
   allow_no_args $*
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/users/${gh_username}/repos
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/users/${gh_owner}/repos
   local default_filter=".name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -590,8 +590,8 @@ function do_list-repo-topics()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/topics
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/topics
   local default_filter=".names[]"
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
 }
@@ -600,8 +600,8 @@ function do_list-tags()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/tags
   local default_filter=".name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -628,7 +628,7 @@ function __main()
                             -max-pages:=max_pages_flag \
              o:=org_flag    -organization:=org_flag    \
              r:=repo_flag   -repository:=repo_flag     \
-             u:=user_flag   -username:=user_flag       \
+                            -owner:=owner_flag         \
              v=verbose_flag -verbose=verbose_flag      \
                             -version=version_flag
 
@@ -637,13 +637,13 @@ function __main()
 
   # Temporary disable until deciding what to do with --netrc
   # gh_configure_credentials
-  gh_init_default_username
+  gh_init_default_owner
 
   (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
-  (( ${#user_flag} ))           && gh_username=${user_flag[2]}
+  (( ${#owner_flag} ))          && gh_owner=${owner_flag[2]}
   (( ${+verbose_flag[1]} > 0 )) && exec 5>&2
 
   (( $# > 0 )) ||
