@@ -381,6 +381,18 @@ function allow_no_args()
     }
 }
 
+function check_parameter_or_fail()
+{
+  local param_name=${1:?Parameter name is required.}
+  local display_name=${2:-${param_name}}
+
+  (( ${(P)+${param_name}} )) ||
+     {
+       >&2 print "Missing parameter: "${display_name}
+       return 1
+     }
+}
+
 function create_json_body()
 {
   local -i counter
@@ -538,18 +550,6 @@ function do_list-repos()
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
   local default_filter=".name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
-}
-
-function check_parameter_or_fail()
-{
-  local param_name=${1:?Parameter name is required.}
-  local display_name=${2:-${param_name}}
-
-  (( ${(P)+${param_name}} )) ||
-     {
-       >&2 print "Missing parameter: "${display_name}
-       return 1
-     }
 }
 
 function do_list-org-repos()
