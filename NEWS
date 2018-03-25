@@ -18,6 +18,7 @@ New in 0.2.0:
   * Add list-repos.
   * Add list-tags.
   * Add rate-limit.
+  * Add --filter.
   * Add --max-pages.
   * Add pagination support.
 
