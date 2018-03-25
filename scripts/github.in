@@ -448,7 +448,7 @@ function do_get-repo()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}
-  curl_print_response | jq -r '.'
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.}"
 }
 
 function do_list-commits()
@@ -457,7 +457,8 @@ function do_list-commits()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/commits
-  curl_print_response | jq -r '.[] | { sha: .sha, author: .commit.author, message: .commit.message }'
+  local default_filter="{ sha: .sha, author: .commit.author, message: .commit.message }"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-languages()
@@ -466,7 +467,7 @@ function do_list-languages()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/languages
-  curl_print_response | jq -r 'keys[]'
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-keys[]}"
 }
 
 function do_list-repo-issues()
@@ -475,7 +476,8 @@ function do_list-repo-issues()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/issues
-  curl_print_response | jq -r '.[] | "\(.id): \(.title)"'
+  local default_filter="\"\(.id): \(.title)\""
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function gh_apply_json_filter()
@@ -487,7 +489,8 @@ function do_list-my-repos()
 {
   allow_no_args $*
   curl_request ${gh_api_base_url}/user/repos
-  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-.name}"
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-contributors()
@@ -496,7 +499,8 @@ function do_list-contributors()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/contributors
-  curl_print_response | jq -r '.[] | .login'
+  local default_filter=".login"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-tags()
@@ -505,14 +509,16 @@ function do_list-tags()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
-  curl_print_response | jq -r '.[] | .name'
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-public-repos()
 {
   allow_no_args $*
   curl_request ${gh_api_base_url}/repositories
-  curl_print_response | jq -r '.[] | .full_name'
+  local default_filter=".full_name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-repos()
@@ -520,7 +526,8 @@ function do_list-repos()
   allow_no_args $*
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/users/${gh_username}/repos
-  curl_print_response | jq -r '.[] | .name'
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function check_parameter_or_fail()
@@ -540,7 +547,8 @@ function do_list-org-repos()
   allow_no_args $*
   check_parameter_or_fail gh_organization organization
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
-  curl_print_response | jq -r '.[] | .name'
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_list-repo-topics()
@@ -549,7 +557,8 @@ function do_list-repo-topics()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/topics
-  curl_print_response | jq -r '.names[]'
+  local default_filter=".names[]"
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
 }
 
 function do_rate-limit()
