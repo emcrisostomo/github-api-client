@@ -13,6 +13,8 @@ New in 0.2.0:
   * Add list-my-repos.
   * Add list-org-repos.
   * Add list-public-repos.
+  * Add list-repo-events.
+  * Add list-repo-issue-events.
   * Add list-repo-issues.
   * Add list-repo-topics.
   * Add list-repos.
