@@ -515,6 +515,21 @@ function do_list-contributors()
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
+function do_list-notifications()
+{
+  allow_no_args $*
+  curl_request ${gh_api_base_url}/notifications
+  local default_filter="\"\(.repository.full_name): \(.subject.title)\""
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-notifications-count()
+{
+  allow_no_args $*
+  curl_request ${gh_api_base_url}/notifications
+  curl_print_response | gh_apply_json_filter ". | length"
+}
+
 function do_list-public-repos()
 {
   allow_no_args $*
@@ -540,6 +555,16 @@ function do_list-repo-events()
   check_parameter_or_fail gh_username username
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/events
   local default_filter="."
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-repo-notifications()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/notifications
+  local default_filter="\"\(.repository.full_name): \(.subject.title)\""
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 

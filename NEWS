@@ -11,11 +11,14 @@ New in 0.2.0:
   * Add list-contributors.
   * Add list-languages.
   * Add list-my-repos.
+  * Add list-notifications.
+  * Add list-notifications-count.
   * Add list-org-repos.
   * Add list-public-repos.
   * Add list-repo-events.
   * Add list-repo-issue-events.
   * Add list-repo-issues.
+  * Add list-repo-notifications.
   * Add list-repo-topics.
   * Add list-repos.
   * Add list-tags.
