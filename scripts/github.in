@@ -607,8 +607,8 @@ function __main()
              v=verbose_flag -verbose=verbose_flag      \
                             -version=version_flag
 
-  (( ${+help_flag[1]} == 0 ))    || print_usage
-  (( ${+version_flag[1]} == 0 )) || print_version
+  (( ! ${#help_flag} ))    || print_usage
+  (( ! ${#version_flag} )) || print_version
 
   # Temporary disable until deciding what to do with --netrc
   # gh_configure_credentials
