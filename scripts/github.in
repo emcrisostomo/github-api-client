@@ -503,16 +503,6 @@ function do_list-contributors()
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
-function do_list-tags()
-{
-  allow_no_args $*
-  check_parameter_or_fail gh_repo repository
-  check_parameter_or_fail gh_username username
-  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
-  local default_filter=".name"
-  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
-}
-
 function do_list-public-repos()
 {
   allow_no_args $*
@@ -579,6 +569,16 @@ function do_list-repo-topics()
   curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/topics
   local default_filter=".names[]"
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-tags()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_username username
+  curl_request ${gh_api_base_url}/repos/${gh_username}/${gh_repo}/tags
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_rate-limit()
