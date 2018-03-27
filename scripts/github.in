@@ -58,6 +58,7 @@ typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
 curl_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
+typeset -a curl_qs_parameters
 typeset -a curl_options
 typeset -r curl_full_header_file=$(mktemp)
 typeset -r curl_full_response_file=$(mktemp)
@@ -235,6 +236,8 @@ function get_link_next()
         }' | \
           grep "^next:" | \
           sed -e 's/^next: *//' || true)
+
+  gh_debug "Link next: ${gh_link_next}"
 }
 
 function curl_request()
@@ -264,7 +267,7 @@ function curl_request()
 
   case ${curl_method} in
     DELETE) ;;
-    GET) ;;
+    GET) curl_request_options+=( -G ) ;;
     POST) curl_request_options+=( -d @- ) ;;
     *) >&2 print "Unexpected verb:" ${curl_method}
        return 1
@@ -273,13 +276,13 @@ function curl_request()
   local -i current_page=0
   while [[ -n ${gh_link_next} ]] && (( ${current_page} < ${gh_max_pages} ))
   do
-    gh_debug "Method: ${curl_method}, options: ${curl_request_options}, path ${gh_link_next}"
+    gh_debug "Method: ${curl_method}, options: ${curl_request_options}, query string: ${curl_qs_parameters}, path ${gh_link_next}"
     for h in ${curl_headers}
     do
       gh_debug "Headers: ${h}"
     done
 
-    curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_headers} ${gh_link_next})
+    curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_qs_parameters} ${curl_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
@@ -297,6 +300,8 @@ function curl_request()
     cat ${curl_last_response_file} >> ${curl_full_response_file}
 
     get_link_next
+    # Clear query string parameters, Assuming all of them are included in the Link header
+    clear_query_string_args
     current_page=$((current_page + 1))
   done
 }
@@ -426,9 +431,37 @@ function gh_apply_json_filter()
   jq -r ${1} < /dev/stdin
 }
 
+function clear_query_string_args()
+{
+  curl_qs_parameters=( )
+}
+
+function add_query_string_arg()
+{
+  for arg in $*
+  do
+    curl_qs_parameters+=( --data-urlencode ${arg} )
+  done
+}
+
+function read_query_args()
+{
+  clear_query_string_args
+
+  for arg in $*
+  do
+    case ${arg} in
+      (*=*) add_query_string_arg ${arg} ;;
+      (*)
+        >&2 print "Unrecognized argument: ${arg}"
+        return 1
+    esac
+  done
+}
+
 function do_list-my-repos()
 {
-  allow_no_args $*
+  read_query_args $*
   curl_request ${gh_api_base_url}/user/repos
   local default_filter=".name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"

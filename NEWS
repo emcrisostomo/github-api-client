@@ -26,6 +26,7 @@ New in 0.2.0:
   * Add --filter.
   * Add --max-pages.
   * Add pagination support.
+  * Add query string parameter support.
 
 New in 0.1.0:
 
