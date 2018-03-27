@@ -56,7 +56,9 @@ body_field_type+=( private      bool )
 # Curl configuration
 typeset -a curl_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
+curl_headers+=( -H "Accept: application/vnd.github.jean-grey-preview+json" )
 curl_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
+curl_headers+=( -H "Accept: application/vnd.github.nightshade-preview+json" )
 curl_headers+=( -H "User-Agent: github-api-client" )
 typeset -a curl_qs_parameters
 typeset -a curl_options
