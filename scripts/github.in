@@ -303,7 +303,7 @@ function curl_request()
 
     get_link_next
     # Clear query string parameters, Assuming all of them are included in the Link header
-    clear_query_string_args
+    clear_query_string_params
     current_page=$((current_page + 1))
   done
 }
@@ -433,7 +433,7 @@ function gh_apply_json_filter()
   jq -r ${1} < /dev/stdin
 }
 
-function clear_query_string_args()
+function clear_query_string_params()
 {
   curl_qs_parameters=( )
 }
@@ -448,7 +448,7 @@ function add_query_string_arg()
 
 function read_query_args()
 {
-  clear_query_string_args
+  clear_query_string_params
 
   for arg in $*
   do
@@ -471,7 +471,7 @@ function do_list-my-repos()
 
 function do_list-contributors()
 {
-  allow_no_args $*
+  read_query_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
   curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/contributors
@@ -496,7 +496,7 @@ function do_list-notifications-count()
 
 function do_list-public-repos()
 {
-  allow_no_args $*
+  read_query_args $*
   curl_request ${gh_api_base_url}/repositories
   local default_filter=".full_name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
@@ -534,7 +534,7 @@ function do_list-repo-notifications()
 
 function do_list-repos()
 {
-  allow_no_args $*
+  read_query_args $*
   check_parameter_or_fail gh_owner owner
   curl_request ${gh_api_base_url}/users/${gh_owner}/repos
   local default_filter=".name"
@@ -543,7 +543,7 @@ function do_list-repos()
 
 function do_list-org-repos()
 {
-  allow_no_args $*
+  read_query_args $*
   check_parameter_or_fail gh_organization organization
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/repos
   local default_filter=".name"
