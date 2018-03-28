@@ -17,7 +17,7 @@
 #
 dnl Copyright (C) 2018 Enrico M. Crisostomo
 AC_PREREQ([2.69])
-AC_INIT([github-api-client], [0.1.0], [enrico.m.crisostomo@gmail.com])
+AC_INIT([github-api-client], [0.2.0], [enrico.m.crisostomo@gmail.com])
 AC_COPYRIGHT([2018 (C) Enrico M. Crisostomo])
 AC_REVISION([$Revision: 1.0.0$])
 AC_CONFIG_SRCDIR([scripts/github.in])
