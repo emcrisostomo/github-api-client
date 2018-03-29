@@ -29,6 +29,7 @@ PROGNAME=${0:t}
 PROGDIR=${0:h}
 BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
+BODY_TEMPLATES_DIR=@pkgdatadir@/body-templates
 
 typeset -r gh_netrc=~/.netrc
 typeset -r gh_api_host=api.github.com
@@ -38,6 +39,7 @@ typeset -r gh_api_base_url=https://${gh_api_host}
 typeset -a filter_flag
 typeset -a help_flag
 typeset -a max_pages_flag
+typeset -a new_owner_name_flag
 typeset -a org_flag
 typeset -a repo_flag
 typeset -a owner_flag
@@ -50,10 +52,13 @@ body_field_type+=( has_issues   bool )
 body_field_type+=( has_projects bool )
 body_field_type+=( has_wiki     bool )
 body_field_type+=( name         string )
+body_field_type+=( new_owner    string )
 body_field_type+=( private      bool )
+body_field_type+=( team_id      array )
 
 # Curl configuration
 typeset -a curl_headers
+typeset -a curl_extra_headers
 curl_headers+=( -H "Accept: application/vnd.github.v3+json" )
 curl_headers+=( -H "Accept: application/vnd.github.jean-grey-preview+json" )
 curl_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
@@ -283,7 +288,7 @@ function curl_request()
       gh_debug "Headers: ${h}"
     done
 
-    curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_qs_parameters} ${curl_headers} ${gh_link_next})
+    curl_status=$(${curl_cmd} -X ${curl_method} ${curl_request_options} ${curl_qs_parameters} ${curl_headers} ${curl_extra_headers} ${gh_link_next})
 
     case ${curl_status} in
       20*) ;;
@@ -354,17 +359,19 @@ function create_json_body()
     esac
 
     value_args+=( v${counter} "${${value#\"}%\"}" )
-
     filter_string+=" | .[\$k${counter}]=\$v${counter}"
-
     counter=$((counter + 1))
   done
 
-  print '{}' | \
+  local body
+  body=$(print '{}' | \
     jq \
       "${(@)key_args}" \
       "${(@)value_args}" \
-      ${filter_string}
+      ${filter_string})
+
+  gh_debug "JSON body: "${body}
+  printf "%s\n" ${body}
 }
 
 function do_create-repo()
@@ -566,6 +573,35 @@ function do_list-tags()
   check_parameter_or_fail gh_owner owner
   curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/tags
   local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+# Preview API
+#
+# Requires: Accept: application/vnd.github.hellcat-preview+json
+function do_list-teams()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  curl_extra_headers+=( -H "Accept: application/vnd.github.hellcat-preview+json" )
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/teams
+  local default_filter=".name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+# Preview API
+#
+# Requires: Accept: application/vnd.github.nightshade-preview+json
+function do_transfer-repo()
+{
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  curl_extra_headers+=( -H "Accept: application/vnd.github.nightshade-preview+json" )
+  local default_filter=".name"
+
+  create_json_body $* | \
+    curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/transfer
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
