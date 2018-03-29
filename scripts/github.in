@@ -31,7 +31,6 @@ BUG_REPORT=@PACKAGE_BUGREPORT@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 
 typeset -r gh_netrc=~/.netrc
-typeset -r gh_auth_file_path=~/.gh_api
 typeset -r gh_api_host=api.github.com
 typeset -r gh_api_base_url=https://${gh_api_host}
 
