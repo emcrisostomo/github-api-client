@@ -52,6 +52,7 @@ body_field_type+=( has_issues   bool )
 body_field_type+=( has_projects bool )
 body_field_type+=( has_wiki     bool )
 body_field_type+=( name         string )
+body_field_type+=( names        array )
 body_field_type+=( new_owner    string )
 body_field_type+=( private      bool )
 body_field_type+=( team_id      array )
@@ -274,7 +275,8 @@ function curl_request()
   case ${curl_method} in
     DELETE) ;;
     GET) curl_request_options+=( -G ) ;;
-    POST) curl_request_options+=( -d @- ) ;;
+    POST) ;&
+    PUT)  curl_request_options+=( -d @- ) ;;
     *) >&2 print "Unexpected verb:" ${curl_method}
        return 1
   esac
@@ -615,6 +617,18 @@ function do_rate-limit()
 '"core remaining: \(.resources.core.remaining)
 search remaining: \(.resources.search.remaining)
 graphql remaining: \(.resources.graphql.remaining)"'
+}
+
+function do_replace-topics()
+{
+  check_parameter_or_fail gh_owner owner
+  check_parameter_or_fail gh_repo repository
+  curl_extra_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
+  local default_filter=".names[]"
+
+  create_json_body $* | \
+    curl_request PUT ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/topics
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
 }
 
 function __main()
