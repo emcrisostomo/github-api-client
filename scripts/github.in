@@ -355,6 +355,10 @@ function create_json_body()
       string)
         value_args+="--arg"
         ;;
+      array)
+        value="["${value}"]"
+        value_args+="--argjson"
+        ;;
       *)
         value_args+="--argjson"
         ;;
