@@ -1,6 +1,15 @@
 NEWS
 ****
 
+New in master:
+
+  * Add create-issue.
+  * Add edit-issue.
+  * Add get-issue.
+  * Add list-assigned-issues.
+  * Add list-user-issues.
+  * Add list-org-issues.
+
 New in 0.3.0:
 
   * Add list-teams.

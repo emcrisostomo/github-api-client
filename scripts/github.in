@@ -38,6 +38,7 @@ typeset -r gh_api_base_url=https://${gh_api_host}
 # getopts
 typeset -a filter_flag
 typeset -a help_flag
+typeset -a issue_id_flag
 typeset -a max_pages_flag
 typeset -a new_owner_name_flag
 typeset -a org_flag
@@ -275,6 +276,7 @@ function curl_request()
   case ${curl_method} in
     DELETE) ;;
     GET) curl_request_options+=( -G ) ;;
+    PATCH) ;&
     POST) ;&
     PUT)  curl_request_options+=( -d @- ) ;;
     *) >&2 print "Unexpected verb:" ${curl_method}
@@ -430,11 +432,73 @@ function do_list-languages()
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-keys[]}"
 }
 
+function do_create-issue()
+{
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  create_json_body $* | \
+    curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
+}
+
+function do_edit-issue()
+{
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  check_parameter_or_fail gh_issue_id issue-id
+  create_json_body $* | \
+    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_issue_id}
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
+}
+
+function do_get-issue()
+{
+  allow_no_args $*
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  curl_extra_headers+=( -H "Accept: application/vnd.github.squirrel-girl-preview" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  check_parameter_or_fail gh_issue_id issue-id
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_issue_id}
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.}"
+}
+
+function do_list-assigned-issues()
+{
+  read_query_args $*
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  curl_request ${gh_api_base_url}/issues
+  local default_filter=".title"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-user-issues()
+{
+  read_query_args $*
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  curl_request ${gh_api_base_url}/user/issues
+  local default_filter=".title"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-org-issues()
+{
+  read_query_args $*
+  check_parameter_or_fail gh_organization organization
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
+  curl_request ${gh_api_base_url}/orgs/${gh_organization}/issues
+  local default_filter=".title"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
 function do_list-repo-issues()
 {
   allow_no_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
+  curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
   curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues
   local default_filter="\"\(.id): \(.title)\""
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
@@ -642,6 +706,7 @@ function __main()
   zparseopts -D -E \
              f:=filter_flag -filter:=filter_flag       \
              h=help_flag    -help=help_flag            \
+                            -issue-id:=issue_id_flag   \
                             -max-pages:=max_pages_flag \
              o:=org_flag    -organization:=org_flag    \
              r:=repo_flag   -repository:=repo_flag     \
@@ -654,8 +719,9 @@ function __main()
 
   gh_init_default_owner
 
-  (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
+  (( ${#issue_id_flag} ))       && gh_issue_id=${issue_id_flag[2]}
+  (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#owner_flag} ))          && gh_owner=${owner_flag[2]}
