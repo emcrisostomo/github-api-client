@@ -48,6 +48,7 @@ typeset -a verbose_flag
 typeset -a version_flag
 
 # json field types
+typeset -A body_args
 typeset -A body_field_type
 body_field_type+=( has_issues   bool )
 body_field_type+=( has_projects bool )
@@ -207,7 +208,7 @@ function term_print()
 
 function curl_print_last_error_message()
 {
-  cat ${curl_last_response_file} | >&2 jq -r '.message'
+  cat ${curl_last_response_file} | >&2 jq -r
   print
 }
 
@@ -304,6 +305,7 @@ function curl_request()
       *) >&2 print "Unexpected status received:" ${curl_status}
          curl_print_last_error_message
          return 1
+         ;;
     esac
 
     cat ${curl_last_header_file} >> ${curl_full_header_file}
@@ -337,18 +339,45 @@ function check_parameter_or_fail()
      }
 }
 
+function read_body_args()
+{
+  body_args=( )
+
+  for p in $*
+  do
+    body_args+=( ${p%%=*} ${p#*=} )
+  done
+}
+
+function check_body_arg_or_fail()
+{
+  local param_name=${1:?Parameter name is required.}
+
+  [[ -n ${body_args[(I)${param_name}]} ]] ||
+    {
+      >&2 print "Missing argument: "${param_name}
+      return 1
+    }
+}
+
 function create_json_body()
 {
+  (( $# == 0 )) ||
+    {
+      >&2 print "Invalid number of arguments: $#"
+      return 1
+    }
+
   local -i counter
   local -a key_args
   local -a value_args
   local filter_string
   filter_string='.'
 
-  for p in $*
+  for k in ${(k)body_args}
   do
-    local key=${p%%=*}
-    local value=${p#*=}
+    local key=${k}
+    local value=${body_args[${k}]}
     local field_type=${body_field_type[${key}]-string}
 
     key_args+=( --arg k${counter} ${key} )
@@ -384,6 +413,8 @@ function create_json_body()
 
 function do_create-repo()
 {
+  read_body_args $*
+  check_body_arg_or_fail name
   create_json_body $* | \
     curl_request POST ${gh_api_base_url}/user/repos
 }
@@ -398,6 +429,7 @@ function do_delete-repo()
 
 function do_edit-repo()
 {
+  read_body_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
   create_json_body $* | \
@@ -434,6 +466,7 @@ function do_list-languages()
 
 function do_create-issue()
 {
+  read_body_args $*
   curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
@@ -444,6 +477,7 @@ function do_create-issue()
 
 function do_edit-issue()
 {
+  read_body_args $*
   curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
@@ -665,6 +699,7 @@ function do_list-teams()
 # Requires: Accept: application/vnd.github.nightshade-preview+json
 function do_transfer-repo()
 {
+  read_body_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
   curl_extra_headers+=( -H "Accept: application/vnd.github.nightshade-preview+json" )
@@ -689,6 +724,7 @@ graphql remaining: \(.resources.graphql.remaining)"'
 
 function do_replace-topics()
 {
+  read_body_args $*
   check_parameter_or_fail gh_owner owner
   check_parameter_or_fail gh_repo repository
   curl_extra_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
