@@ -6,7 +6,10 @@ New in master:
   * Add create-issue.
   * Add edit-issue.
   * Add get-issue.
+  * Add get-repo-branch.
   * Add list-assigned-issues.
+  * Add list-repo-branches.
+  * Add list-repo-releases.
   * Add list-user-issues.
   * Add list-org-issues.
 

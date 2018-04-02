@@ -36,6 +36,7 @@ typeset -r gh_api_host=api.github.com
 typeset -r gh_api_base_url=https://${gh_api_host}
 
 # getopts
+typeset -a branch_flag
 typeset -a filter_flag
 typeset -a help_flag
 typeset -a issue_id_flag
@@ -508,6 +509,17 @@ function do_get-issue()
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.}"
 }
 
+function do_get-repo-branch()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  check_parameter_or_fail gh_branch branch
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/branches/${gh_branch}
+  local default_filter="."
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
 function do_list-assigned-issues()
 {
   read_query_args $*
@@ -533,6 +545,16 @@ function do_list-org-issues()
   gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
   curl_request ${gh_api_base_url}/orgs/${gh_organization}/issues
   local default_filter=".title"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
+function do_list-repo-branches()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/branches
+  local default_filter=".name"
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
@@ -669,6 +691,16 @@ function do_list-org-repos()
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
+function do_list-repo-releases()
+{
+  allow_no_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/releases
+  local default_filter=".tag_name"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
+}
+
 function do_list-repo-topics()
 {
   allow_no_args $*
@@ -749,6 +781,7 @@ function __main()
   gh_check_required_programs
 
   zparseopts -D -E \
+                            -branch:=branch_flag       \
              f:=filter_flag -filter:=filter_flag       \
              h=help_flag    -help=help_flag            \
                             -issue-id:=issue_id_flag   \
@@ -764,6 +797,7 @@ function __main()
 
   gh_init_default_owner
 
+  (( ${#branch_flag} ))         && gh_branch=${branch_flag[2]}
   (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
   (( ${#issue_id_flag} ))       && gh_issue_id=${issue_id_flag[2]}
   (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
