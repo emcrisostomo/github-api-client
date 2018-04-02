@@ -759,8 +759,8 @@ function __main()
              v=verbose_flag -verbose=verbose_flag      \
                             -version=version_flag
 
-  (( ! ${#help_flag} ))    || print_usage
-  (( ! ${#version_flag} )) || print_version
+  (( ${#help_flag} ))    && print_usage
+  (( ${#version_flag} )) && print_version
 
   gh_init_default_owner
 
