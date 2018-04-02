@@ -415,7 +415,7 @@ function do_create-repo()
 {
   read_body_args $*
   check_body_arg_or_fail name
-  create_json_body $* | \
+  create_json_body | \
     curl_request POST ${gh_api_base_url}/user/repos
 }
 
@@ -432,7 +432,7 @@ function do_edit-repo()
   read_body_args $*
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
-  create_json_body $* | \
+  create_json_body | \
     curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}
 }
 
@@ -470,7 +470,7 @@ function do_create-issue()
   curl_extra_headers+=( -H "Accept: application/vnd.github.symmetra-preview+json" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
-  create_json_body $* | \
+  create_json_body | \
     curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
 }
@@ -482,7 +482,7 @@ function do_edit-issue()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
   check_parameter_or_fail gh_issue_id issue-id
-  create_json_body $* | \
+  create_json_body | \
     curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_issue_id}
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
 }
@@ -705,7 +705,7 @@ function do_transfer-repo()
   curl_extra_headers+=( -H "Accept: application/vnd.github.nightshade-preview+json" )
   local default_filter=".name"
 
-  create_json_body $* | \
+  create_json_body | \
     curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/transfer
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
@@ -730,7 +730,7 @@ function do_replace-topics()
   curl_extra_headers+=( -H "Accept: application/vnd.github.mercy-preview+json" )
   local default_filter=".names[]"
 
-  create_json_body $* | \
+  create_json_body | \
     curl_request PUT ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/topics
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
 }
@@ -761,7 +761,7 @@ function __main()
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
   (( ${#owner_flag} ))          && gh_owner=${owner_flag[2]}
-  (( ${+verbose_flag[1]} > 0 )) && exec 5>&2
+  (( ${#verbose_flag} ))        && exec 5>&2
 
   (( $# > 0 )) ||
     {
