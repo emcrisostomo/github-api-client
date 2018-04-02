@@ -190,9 +190,9 @@ function gh_init_default_owner()
 
   local -a gh_netrc_section
   gh_netrc_section=( "${(f)$(awk \
-                       '/^machine[[:blank:]]*'${gh_api_host}'/{flag=1;next}/^machine.*/{flag=0}flag' \
-                       ${gh_netrc} | \
-                  grep "^[[:blank:]]*login[[:blank:]]*" || true)}" )
+                               '/^machine[[:blank:]]*'${gh_api_host}'/{flag=1;next}/^machine[[:blank:]]*/{flag=0}flag' \
+                               ${gh_netrc} | \
+                                 grep "^[[:blank:]]*login[[:blank:]]*" || true)}" )
 
   (( ${#gh_netrc_section} > 0 )) || return
 
