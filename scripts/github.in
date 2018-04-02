@@ -243,8 +243,8 @@ function get_link_next()
           sub(/^ *</, "", $1); sub(/>$/, "", $1)
           print $2, $1
         }' | \
-          grep "^next:" | \
-          sed -e 's/^next: *//' || true)
+      grep "^next:" | \
+      sed -e 's/^next: *//' || true)
 
   gh_debug "Link next: ${gh_link_next}"
 }
