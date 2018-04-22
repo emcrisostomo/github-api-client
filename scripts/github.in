@@ -776,6 +776,24 @@ function do_replace-topics()
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-${default_filter}}"
 }
 
+function do_list-token-scopes()
+{
+  curl_request ${gh_api_base_url}
+
+  local scopes_header="X-OAuth-Scopes"
+  local -a scopes
+
+  cat ${curl_last_header_file} | \
+    grep "^${scopes_header}:" | \
+    sed -e "s/^${scopes_header}://" | \
+    IFS=', ' read -rA scopes
+
+  for scope in ${scopes}
+  do
+    print ${scope}
+  done
+}
+
 function __main()
 {
   gh_check_required_programs
