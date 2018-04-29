@@ -673,7 +673,7 @@ function do_list-repo-notifications()
   curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
-function do_list-repos()
+function do_list-user-repos()
 {
   read_query_args $*
   check_parameter_or_fail gh_owner owner

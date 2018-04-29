@@ -4,6 +4,7 @@ NEWS
 New in master:
 
   * Add list-token-scopes.
+  * Rename list-repos to list-user-repos.
 
 New in 0.4.0:
 
