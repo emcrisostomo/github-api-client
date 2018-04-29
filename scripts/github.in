@@ -305,6 +305,8 @@ function curl_request()
                     ${gh_api_headers_parameters} \
                     ${gh_link_next})
 
+    gh_debug "Response status: ${curl_status}"
+
     case ${curl_status} in
       20*) ;;
       4*) ;&
@@ -427,6 +429,16 @@ function do_create-repo()
   check_body_arg_or_fail name
   create_json_body | \
     curl_request POST ${gh_api_base_url}/user/repos
+}
+
+function do_fork-repo()
+{
+  read_body_args $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  create_json_body | \
+    curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/forks
+  curl_print_response
 }
 
 function do_delete-repo()

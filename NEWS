@@ -3,6 +3,7 @@ NEWS
 
 New in master:
 
+  * Add fork-repo.
   * Add list-token-scopes.
   * Rename list-repos to list-user-repos.
 
