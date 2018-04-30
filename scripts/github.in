@@ -39,7 +39,7 @@ typeset -r gh_api_base_url=https://${gh_api_host}
 typeset -a branch_flag
 typeset -a filter_flag
 typeset -a help_flag
-typeset -a issue_id_flag
+typeset -a res_id_flag
 typeset -a max_pages_flag
 typeset -a new_owner_name_flag
 typeset -a org_flag
@@ -451,12 +451,12 @@ function do_update-pull-request()
   gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
-  check_parameter_or_fail gh_issue_id issue-id
+  check_parameter_or_fail gh_resource_id resource-id
   check_body_arg_or_fail title
   check_body_arg_or_fail head
   check_body_arg_or_fail base
   create_json_body | \
-    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/pulls/${gh_issue_id}
+    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/pulls/${gh_resource_id}
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
 }
 
@@ -543,9 +543,9 @@ function do_edit-issue()
   gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
-  check_parameter_or_fail gh_issue_id issue-id
+  check_parameter_or_fail gh_resource_id resource-id
   create_json_body | \
-    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_issue_id}
+    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_resource_id}
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
 }
 
@@ -556,8 +556,8 @@ function do_get-issue()
   gh_api_extra_headers+=( "Accept: application/vnd.github.squirrel-girl-preview" )
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
-  check_parameter_or_fail gh_issue_id issue-id
-  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_issue_id}
+  check_parameter_or_fail gh_resource_id resource-id
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/issues/${gh_resource_id}
   curl_print_response | gh_apply_json_filter "${gh_json_filter:-.}"
 }
 
@@ -851,15 +851,15 @@ function __main()
   gh_check_required_programs
 
   zparseopts -D -E \
-                            -branch:=branch_flag       \
-             f:=filter_flag -filter:=filter_flag       \
-             h=help_flag    -help=help_flag            \
-                            -issue-id:=issue_id_flag   \
-                            -max-pages:=max_pages_flag \
-             o:=org_flag    -organization:=org_flag    \
-             r:=repo_flag   -repository:=repo_flag     \
-                            -owner:=owner_flag         \
-             v=verbose_flag -verbose=verbose_flag      \
+                            -branch:=branch_flag        \
+             f:=filter_flag -filter:=filter_flag        \
+             h=help_flag    -help=help_flag             \
+                            -max-pages:=max_pages_flag  \
+             o:=org_flag    -organization:=org_flag     \
+             r:=repo_flag   -repository:=repo_flag      \
+                            -resource-id:=res_id_flag   \
+                            -owner:=owner_flag          \
+             v=verbose_flag -verbose=verbose_flag       \
                             -version=version_flag
 
   (( ${#help_flag} ))    && print_usage
@@ -869,7 +869,7 @@ function __main()
 
   (( ${#branch_flag} ))         && gh_branch=${branch_flag[2]}
   (( ${#filter_flag} ))         && gh_json_filter=${filter_flag[2]}
-  (( ${#issue_id_flag} ))       && gh_issue_id=${issue_id_flag[2]}
+  (( ${#res_id_flag} ))         && gh_resource_id=${res_id_flag[2]}
   (( ${#max_pages_flag} ))      && gh_max_pages=${max_pages_flag[2]}
   (( ${#org_flag} ))            && gh_organization=${org_flag[2]}
   (( ${#repo_flag} ))           && gh_repo=${repo_flag[2]}
