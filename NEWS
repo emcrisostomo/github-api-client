@@ -3,8 +3,11 @@ NEWS
 
 New in master:
 
+  * Add create-pull-request.
   * Add fork-repo.
+  * Add list-pull-requests.
   * Add list-token-scopes.
+  * Add update-pull-request.
   * Rename list-repos to list-user-repos.
 
 New in 0.4.0:

@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+,#!/usr/bin/env zsh
 # -*- vim:fenc=utf-8:et:sw=2:ts=2:sts=2
 #
 # Copyright (c) 2018 Enrico M. Crisostomo
@@ -429,6 +429,46 @@ function do_create-repo()
   check_body_arg_or_fail name
   create_json_body | \
     curl_request POST ${gh_api_base_url}/user/repos
+}
+
+function do_create-pull-request()
+{
+  read_body_args $*
+  gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  check_body_arg_or_fail title
+  check_body_arg_or_fail head
+  check_body_arg_or_fail base
+  create_json_body | \
+    curl_request POST ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/pulls
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
+}
+
+function do_update-pull-request()
+{
+  read_body_args $*
+  gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  check_parameter_or_fail gh_issue_id issue-id
+  check_body_arg_or_fail title
+  check_body_arg_or_fail head
+  check_body_arg_or_fail base
+  create_json_body | \
+    curl_request PATCH ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/pulls/${gh_issue_id}
+  curl_print_response | gh_apply_json_filter "${gh_json_filter:-.id}"
+}
+
+function do_list-pull-requests()
+{
+  allow_no_args $*
+  gh_api_extra_headers+=( "Accept: application/vnd.github.symmetra-preview+json" )
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+  curl_request ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/pulls
+  local default_filter=".id"
+  curl_print_response | gh_apply_json_filter ".[] | ${gh_json_filter:-${default_filter}}"
 }
 
 function do_fork-repo()
