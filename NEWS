@@ -1,7 +1,7 @@
 NEWS
 ****
 
-New in master:
+New in 0.5.0:
 
   * Add create-pull-request.
   * Add delete-repo-release.
