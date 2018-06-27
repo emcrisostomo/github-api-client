@@ -4,6 +4,7 @@ NEWS
 New in master:
 
   * Add create-pull-request.
+  * Add delete-repo-release.
   * Add fork-repo.
   * Add list-pull-requests.
   * Add list-token-scopes.

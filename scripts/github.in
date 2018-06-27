@@ -1,4 +1,4 @@
-,#!/usr/bin/env zsh
+#!/usr/bin/env zsh
 # -*- vim:fenc=utf-8:et:sw=2:ts=2:sts=2
 #
 # Copyright (c) 2018 Enrico M. Crisostomo
@@ -339,6 +339,15 @@ function allow_no_args()
     }
 }
 
+function require_arg()
+{
+  (( $# > 0 )) ||
+    {
+      print "Missing argument." >&2
+      return 1
+    }
+}
+
 function check_parameter_or_fail()
 {
   local param_name=${1:?Parameter name is required.}
@@ -487,6 +496,18 @@ function do_delete-repo()
   check_parameter_or_fail gh_repo repository
   check_parameter_or_fail gh_owner owner
   curl_request DELETE ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}
+}
+
+function do_delete-repo-release()
+{
+  require_arg $*
+  check_parameter_or_fail gh_repo repository
+  check_parameter_or_fail gh_owner owner
+
+  for r in $*
+  do
+    curl_request DELETE ${gh_api_base_url}/repos/${gh_owner}/${gh_repo}/releases/${r}
+  done
 }
 
 function do_edit-repo()
